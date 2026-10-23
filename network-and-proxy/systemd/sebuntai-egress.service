@@ -1,0 +1,13 @@
+[Unit]
+Description=SebuntAI application network egress policy
+After=ufw.service
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/nftables.d/sebuntai-egress.nft
+ExecReload=/usr/sbin/nft -f /etc/nftables.d/sebuntai-egress.nft
+
+[Install]
+WantedBy=network-pre.target

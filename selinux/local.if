@@ -1,0 +1,3 @@
+## <summary></summary>
+## Local SEbuntu AI application policy.
+## Applications receive access only to their own code and state types.

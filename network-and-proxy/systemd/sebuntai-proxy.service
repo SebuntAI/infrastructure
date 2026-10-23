@@ -1,0 +1,41 @@
+[Unit]
+Description=SebuntAI HTTPS inspection proxy
+After=network.target assistant-web-monitoring.service
+Requires=assistant-web-monitoring.service
+
+[Service]
+Type=simple
+User=mitmproxy
+SELinuxContext=mitmproxy_u:mitmproxy_r:mitmproxy_t:s0
+Group=mitmproxy
+SupplementaryGroups=assistant_web_monitoring_ingest
+Environment=HOME=/var/lib/mitmproxy
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONNOUSERSITE=1
+WorkingDirectory=/
+StateDirectory=mitmproxy
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/opt/mitmproxy/venv/bin/mitmdump --mode regular --listen-host 127.0.0.1 --listen-port 3128 --set confdir=/var/lib/mitmproxy --set flow_detail=0 -s /etc/mitmproxy/readonly_methods.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHome=yes
+ProtectSystem=strict
+ProtectHostname=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

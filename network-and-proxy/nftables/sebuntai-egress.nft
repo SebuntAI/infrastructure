@@ -1,0 +1,36 @@
+destroy table inet sebuntai_egress
+table inet sebuntai_egress {
+    chain output {
+        type filter hook output priority -50; policy accept;
+
+        # The MITM proxy may use the local systemd-resolved stub for DNS.
+        meta skuid 988 ip daddr 127.0.0.53 udp dport 53 counter accept
+        meta skuid 988 ip daddr 127.0.0.53 tcp dport 53 counter accept
+
+        # Permit only established replies to local proxy clients; new loopback dials remain blocked.
+        meta skuid 988 ct state established,related ip daddr 127.0.0.0/8 counter accept
+        meta skuid 988 ct state established,related ip6 daddr ::1 counter accept
+
+        # Prevent the proxy from reaching private, local, documentation, and special IPv4 ranges.
+        meta skuid 988 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.0.2.0/24, 192.88.99.0/24, 192.168.0.0/16, 198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24, 224.0.0.0/4, 240.0.0.0/4 } counter reject
+        meta skuid 988 ip6 daddr { 2001::/23, 2001:db8::/32, 2001:20::/28, 3fff::/20 } counter reject
+
+        # Permit web ports to other IPv4 destinations and global IPv6 unicast only.
+        meta skuid 988 meta nfproto ipv4 tcp dport { 80, 443 } counter accept
+        meta skuid 988 ip6 daddr 2000::/3 tcp dport { 80, 443 } counter accept
+        meta skuid 988 counter reject
+
+        # Local PostgreSQL and Ollama for the five AI application UIDs.
+        meta skuid { 990, 993, 994, 995, 996 } ip daddr 127.0.0.1 tcp dport { 5432, 11434 } counter accept
+
+        # Allow Assistant to reply to local TUI WebSocket clients; new loopback dials stay blocked.
+        meta skuid 996 ct state established,related ip daddr 127.0.0.0/8 counter accept
+        meta skuid 996 ct state established,related ip6 daddr ::1 counter accept
+
+        # Assistant may connect only to the local filtering proxy for Internet access.
+        meta skuid 996 ip daddr 127.0.0.1 tcp dport 3128 counter accept
+
+        # Deny all other IPv4 and IPv6 traffic from the AI application UIDs.
+        meta skuid { 990, 993, 994, 995, 996 } counter reject
+    }
+}
